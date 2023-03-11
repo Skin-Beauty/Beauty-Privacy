@@ -1,0 +1,135 @@
+
+import torch.optim as optim  # For all Optimization algorithms, SGD, Adam, etc.
+import torchvision.transforms as transforms  # Transformations we can perform on our dataset
+import torchvision
+import os
+import pandas as pd
+from tqdm import tqdm
+from sklearn.ensemble import RandomForestClassifier
+#from skimage import io
+#from skimage.transform import rescale, resize, downscale_local_mean
+from torch.utils.data import (
+    Dataset,
+    DataLoader,
+)
+
+import os
+import argparse
+from torch.backends import cudnn
+
+import sys
+
+sys.path.append("/home/yerinyoon/code/anonymousNet/data/celeba/")
+
+from attribute_select_model import *
+from data_extract import *
+
+
+
+parser = argparse.ArgumentParser()
+
+
+# Model configuration.
+#parser.add_argument('--c_dim', type=int, default=13, help='dimension of domain labels (1st dataset)')
+parser.add_argument('--num_classes', type=int, default=2)
+parser.add_argument('--learning_rate', type=float, default=1e-3)
+parser.add_argument('--batch_size', type=int, default=32)
+parser.add_argument('--num_epochs', type=int, default=10)
+parser.add_argument('--in_channel', type=int, default=3)
+
+parser.add_argument('--num_workers', type=int, default=1)
+parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
+parser.add_argument('--use_tensorboard', type=str2bool, default=True)
+
+parser.add_argument('--celeba_image_dir', type=str, default="/home/yerinyoon/data/zip/data/celeba/img_align_celeba")
+parser.add_argument('--attr_path', type=str, default="/home/yerinyoon/data/zip/data/celeba/list_attr_celeba.txt")
+# parser.add_argument('--rafd_image_dir', type=str, default='data/RaFD/train')
+parser.add_argument('--log_dir', type=str, default='../')
+parser.add_argument('--model_save_dir', type=str, default='/home/yerinyoon/code/anonymousNet/mas_model_save_point')
+parser.add_argument('--sample_dir', type=str, default='/home/yerinyoon/code/anonymousNet/mas_model_save_point')
+parser.add_argument('--result_dir', type=str, default='/home/yerinyoon/code/anonymousNet/mas_model_save_point')
+
+
+
+config = parser.parse_args(args=[])
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+pretrained = torchvision.models.googlenet(pretrained=True)
+
+googlenet=GoogleNet(pretrained)
+rf=RandomForestClassifier(n_estimators=40, random_state=0)
+ #model=PipeLine(steps=[("GoogleNet", googlenet),( "RF", rf)])
+ #model=nn.DataParallel(model)
+ #model.to(device);
+
+
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+batch_val_Acc=0
+
+for epoch in range(num_epochs):
+    losses = []
+#image_dir, attr_path, selected_attrs, crop_size=178, image_size=128, 
+ #              batch_size=16, dataset='CelebA', mode='train', num_workers=1
+
+    for batch_idx, (feature, targets) in tqdm(enumerate(get_loader(config_0.celeba_image_dir, config_0.attr_path,config_0.selected_attrs,
+                                           config_0.celeba_crop_size,  config_0.image_size, config_0.batch_size,
+                                   'CelebA', config_0.mode, config_0.num_workers))):
+        # Get data to cuda if possible
+        feature = feature.to(device=device,dtype=torch.float)
+        targets = targets.to(device=device)
+      
+        
+
+        # forward
+        scores = model(feature)
+
+
+        loss = criterion(scores, targets)
+
+        losses.append(loss.item())
+        # backward
+        optimizer.zero_grad()
+        loss.backward()
+
+        # gradient descent or adam step
+        optimizer.step()
+        
+        scores=scores.cuda().detach().numpy()
+        targets=targets.cuda().detach().numpy()
+        preds=np.argmax(scores, 1)
+        batch_acc=(scores==targets).sum()/BATCH_SIZE*100
+        train_acc_list.append(batch_acc)
+    
+    train_acc=np.mean(train_acc_list)
+    print(f"epochs:{epoch}, acc: {train_acc}")
+   ## validation
+    model.eval()
+#    valid_acc_list=[]
+#    with torch.no_grad():
+#        correct=0
+#        total=0
+#
+#        for images, labels in val_dataloader:
+#            images=images.type(torch.FloatTensor).to(device)
+#            labels=labels.type(torch.LongTensor).to(device)
+#
+#            probs=model(images)
+#            valid_loss=criterion(probs, labels)
+#
+#            probs=probs.cuda().detach().numpy()
+#            labels=labels.cuda().detach().numpy()
+#            preds=np.argmax(probs, 1)
+#            batch_acc=(preds==labels).sum() /BATCH_SIZE*100
+#
+#            valid_acc_list.append(batch_acc)
+#
+#        val_acc=np.mean(valid_acc_list)
+#        print(f"validation acc: {val_acc}")
+#
+    
+    selected_model_path = os.path.join(config_0.model_save_dir,  'selected_model_with_rf.ckpt')
+    torch.save(model.state_dict(), selected_model_path)
+    print('Saved model checkpoints into {}...'.format(config_0.model_save_dir))
