@@ -33,7 +33,7 @@ import sys
 import argparse
 from torch.backends import cudnn
 
-sys.path.append("/home/yerinyoon/code/anonymousNet/data/celeba/")
+sys.path.append("/Users/yerinyoon/Documents/cubig/anonymousNet/data/celeba/")
 
 from model import *
 from data_extract import *
@@ -78,7 +78,7 @@ def main(config):
     
 
     # Solver for training and testing StarGAN.
-    solver = Solver(celeba_loader, rafd_loader, configi, wandb)
+    solver = Solver(celeba_loader, rafd_loader, config, wandb)
     wandb.watch(solver)
     if config.mode == 'train':
 
@@ -109,14 +109,14 @@ parser.add_argument('--lambda_gp', type=float, default=10, help='weight for grad
 # Training configuration.
 parser.add_argument('--dataset', type=str, default='CelebA', choices=['CelebA', 'RaFD', 'Both'])
 parser.add_argument('--batch_size', type=int, default=16, help='mini-batch size')
-parser.add_argument('--num_iters', type=int, default=400000, help='number of total iterations for training D')
+parser.add_argument('--num_iters', type=int, default=200000, help='number of total iterations for training D')
 parser.add_argument('--num_iters_decay', type=int, default=50000, help='number of iterations for decaying lr')
 parser.add_argument('--g_lr', type=float, default=0.0001, help='learning rate for G')
 parser.add_argument('--d_lr', type=float, default=0.0001, help='learning rate for D')
 parser.add_argument('--n_critic', type=int, default=5, help='number of D updates per each G update')
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for Adam optimizer')
 parser.add_argument('--beta2', type=float, default=0.999, help='beta2 for Adam optimizer')
-parser.add_argument('--resume_iters', type=int, default=220000, help='resume training from this step')
+parser.add_argument('--resume_iters', type=int, default=0, help='resume training from this step')
 parser.add_argument('--selected_attrs', '--list', nargs='+', help='selected attributes for the CelebA dataset',
                     default=['Arched_Eyebrows', 'Bags_Under_Eyes', 'Bangs', 'Big_Lips',
                             'Big_Nose','Black_Hair','Bushy_Eyebrows','Chubby','Double_Chin',
@@ -135,19 +135,19 @@ parser.add_argument('--test_iters', type=int, default=200000, help='test model f
 
 # Miscellaneous.
 parser.add_argument('--num_workers', type=int, default=1)
-parser.add_argument('--mode', type=str, default='test', choices=['train', 'test'])
+parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
 parser.add_argument('--use_tensorboard', type=str2bool, default=True)
 
 # Directories.
 parser.add_argument('--celeba_image_dir', type=str, default="/home/yerinyoon/data/zip/data/celeba/img_align_celeba")
 parser.add_argument('--attr_path', type=str, default="/home/yerinyoon/data/zip/data/celeba/list_attr_celeba.txt")
 # parser.add_argument('--rafd_image_dir', type=str, default='data/RaFD/train')
-parser.add_argument('--log_dir', type=str, default='../')
-parser.add_argument('--model_save_dir', type=str, default='/home/yerinyoon/code/anonymousNet/sevice_model_save_point')
-parser.add_argument('--sample_dir', type=str, default='/home/yerinyoon/code/anonymousNet/service_model_save_point')
-parser.add_argument('--result_dir', type=str, default='/home/yerinyoon/code/anonymousNet/service_model_save_point')
+parser.add_argument('--log_dir', type=str, default='./log')
+parser.add_argument('--model_save_dir', type=str, default='/Users/yerinyoon/Documents/cubig/anonymousNet/service_model_save_point')
+parser.add_argument('--sample_dir', type=str, default='/Users/yerinyoon/Documents/cubig/anonymousNet/service_model_save_point')
+parser.add_argument('--result_dir', type=str, default='/Users/yerinyoon/Documents/cubig/anonymousNet/service_model_save_point')
 
-parser.add_argument('--service_model_save_dir', type=str, default='/home/yerinyoon/code/anonymousNet/service_model_save_point')
+parser.add_argument('--service_model_save_dir', type=str, default='/Users/yerinyoon/Documents/cubig/anonymousNet/service_model_save_point')
 
 # Step size.
 parser.add_argument('--log_step', type=int, default=10)
@@ -157,10 +157,11 @@ parser.add_argument('--lr_update_step', type=int, default=1000)
 
 #model save
 parser.add_argument("--output-prefix", default="model")
-parser.add_argument('--resume-from', default="/home/yerinyoon/code/anonymousNet/service_model_save_point")
+parser.add_argument('--resume-from', default="/Users/yerinyoon/Documents/cubig/anonymousNet/service_model_save_point")
 parser.add_argument('--input-dim', type=int)
 
 parser.add_argument("--gpu_id", default=0)
+
 
 config = parser.parse_args(args=[])
 # print(config)
